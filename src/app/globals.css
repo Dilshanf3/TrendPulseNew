@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --color-cream: #faf7f2;
+  --color-cream-dark: #f2ede3;
+  --color-paper: #fffdfa;
+  --color-charcoal: #24211c;
+  --color-charcoal-soft: #4a453d;
+  --color-gold: #b08d57;
+  --color-gold-light: #cba86b;
+  --color-gold-dark: #8f6f3f;
+  --color-line: #e7e0d3;
+
+  /* Admin back-office theme — deliberately distinct from the storefront palette above */
+  --color-admin-sidebar: #0f172a;
+  --color-admin-sidebar-hover: #1e293b;
+  --color-admin-sidebar-active: #1d4ed8;
+  --color-admin-sidebar-text: #cbd5e1;
+  --color-admin-sidebar-text-muted: #64748b;
+  --color-admin-bg: #f1f5f9;
+  --color-admin-surface: #ffffff;
+  --color-admin-border: #e2e8f0;
+  --color-admin-text: #0f172a;
+  --color-admin-text-muted: #64748b;
+  --color-admin-accent: #2563eb;
+  --color-admin-accent-hover: #1d4ed8;
+  --color-admin-accent-soft: #dbeafe;
+}
+
+@theme inline {
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-charcoal);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-playfair);
+  --font-mono: var(--font-geist-mono);
+
+  --color-cream: var(--color-cream);
+  --color-cream-dark: var(--color-cream-dark);
+  --color-paper: var(--color-paper);
+  --color-charcoal: var(--color-charcoal);
+  --color-charcoal-soft: var(--color-charcoal-soft);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-gold-dark: var(--color-gold-dark);
+  --color-line: var(--color-line);
+
+  --color-admin-sidebar: var(--color-admin-sidebar);
+  --color-admin-sidebar-hover: var(--color-admin-sidebar-hover);
+  --color-admin-sidebar-active: var(--color-admin-sidebar-active);
+  --color-admin-sidebar-text: var(--color-admin-sidebar-text);
+  --color-admin-sidebar-text-muted: var(--color-admin-sidebar-text-muted);
+  --color-admin-bg: var(--color-admin-bg);
+  --color-admin-surface: var(--color-admin-surface);
+  --color-admin-border: var(--color-admin-border);
+  --color-admin-text: var(--color-admin-text);
+  --color-admin-text-muted: var(--color-admin-text-muted);
+  --color-admin-accent: var(--color-admin-accent);
+  --color-admin-accent-hover: var(--color-admin-accent-hover);
+  --color-admin-accent-soft: var(--color-admin-accent-soft);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-charcoal);
+}
+
+::selection {
+  background: var(--color-gold-light);
+  color: var(--color-charcoal);
+}
