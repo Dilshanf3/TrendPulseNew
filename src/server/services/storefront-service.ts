@@ -2,7 +2,7 @@ import { cache } from "react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { calcDiscountPercent } from "@/lib/utils";
-import type { ListProductsParams } from "./product-service";
+import { MERCHANDISING_ORDER, type ListProductsParams } from "./product-service";
 
 /**
  * Everything the storefront shows as navigation or merchandising is derived from the database,
@@ -66,7 +66,7 @@ export async function getHeroContent() {
 
   const productImages = await prisma.productImage.findMany({
     where: { sortOrder: 0, product: published },
-    orderBy: [{ product: { isFeatured: "desc" } }, { product: { createdAt: "desc" } }],
+    orderBy: MERCHANDISING_ORDER.map((o) => ({ product: o })),
     take: 2,
     select: { url: true, altText: true },
   });

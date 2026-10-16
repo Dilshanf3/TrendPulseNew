@@ -75,10 +75,20 @@ export async function listProducts(params: ListProductsParams) {
   return { items: items.map(toProductCard), total, page, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
+/**
+ * Merchandising order, controlled from the database: featured products first, then by the
+ * top-level category's sortOrder (so e.g. clothing and beauty lead), then newest.
+ */
+export const MERCHANDISING_ORDER: Prisma.ProductOrderByWithRelationInput[] = [
+  { isFeatured: "desc" },
+  { category: { parent: { sortOrder: "asc" } } },
+  { createdAt: "desc" },
+];
+
 const COLLECTIONS = {
-  "new-arrivals": { where: { isNew: true }, orderBy: { createdAt: "desc" } },
-  "best-sellers": { where: { isBestSeller: true }, orderBy: { soldCount: "desc" } },
-} satisfies Record<string, { where: Prisma.ProductWhereInput; orderBy: Prisma.ProductOrderByWithRelationInput }>;
+  "new-arrivals": { where: { isNew: true }, orderBy: MERCHANDISING_ORDER },
+  "best-sellers": { where: { isBestSeller: true }, orderBy: [{ soldCount: "desc" }, ...MERCHANDISING_ORDER] },
+} satisfies Record<string, { where: Prisma.ProductWhereInput; orderBy: Prisma.ProductOrderByWithRelationInput[] }>;
 
 export async function getCollection(name: keyof typeof COLLECTIONS, take = 8) {
   const { where, orderBy } = COLLECTIONS[name];
