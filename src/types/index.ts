@@ -1,10 +1,4 @@
-import type { Product, ProductImage, ProductVariant, Category, Review } from "@prisma/client";
-
-export type ProductWithRelations = Product & {
-  images: ProductImage[];
-  variants: ProductVariant[];
-  category: Category;
-};
+import type { Review } from "@prisma/client";
 
 export type ProductCardData = {
   id: string;
@@ -39,21 +33,4 @@ export type CartItemData = {
   stock: number;
 };
 
-export type FilterState = {
-  categories: string[];
-  sizes: string[];
-  colors: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  rating?: number;
-  onSale?: boolean;
-};
-
-export type SortOption =
-  | "recommended"
-  | "newest"
-  | "popular"
-  | "rating"
-  | "price-asc"
-  | "price-desc"
-  | "discount";
+export type SortOption = "newest" | "popular" | "rating" | "price-asc" | "price-desc";

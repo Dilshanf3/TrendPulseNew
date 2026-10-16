@@ -5,22 +5,22 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium tracking-wide transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-charcoal text-cream hover:bg-gold-dark hover:shadow-md",
-        gold: "bg-gold text-white hover:bg-gold-dark hover:shadow-md",
-        outline: "border border-charcoal bg-transparent text-charcoal hover:border-gold hover:text-gold-dark",
-        ghost: "bg-transparent hover:bg-cream-dark",
-        link: "bg-transparent underline-offset-4 hover:underline p-0 h-auto",
+        default: "bg-primary text-primary-foreground hover:bg-primary/85",
+        accent: "bg-accent text-white hover:bg-accent-strong",
+        outline: "border border-border bg-surface text-foreground hover:border-foreground",
+        ghost: "bg-transparent text-foreground hover:bg-surface-muted",
+        link: "h-auto bg-transparent p-0 text-foreground underline underline-offset-4 hover:text-accent-strong",
         destructive: "bg-red-700 text-white hover:bg-red-800",
-        subtle: "bg-cream-dark text-charcoal hover:bg-line",
+        subtle: "bg-surface-muted text-foreground hover:bg-border",
       },
       size: {
-        default: "h-11 px-6",
-        sm: "h-9 px-4 text-xs",
-        lg: "h-12 px-8 text-base",
+        default: "h-11 px-5",
+        sm: "h-9 px-3.5 text-xs",
+        lg: "h-12 px-7 text-[15px]",
         icon: "h-10 w-10",
       },
     },

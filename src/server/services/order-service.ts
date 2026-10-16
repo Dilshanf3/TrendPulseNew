@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import type { CheckoutInput } from "@/lib/validations/cart";
+import { getShippingFee, getUnitPrice } from "@/lib/pricing";
 
 function generateOrderNumber() {
   const ts = Date.now().toString(36).toUpperCase();
@@ -42,7 +43,7 @@ export async function createOrderFromCart(userId: string | null, guestCartItems:
 
     let subtotal = 0;
     const orderItemsData = items.map((item) => {
-      const price = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.salePrice ?? item.product.basePrice);
+      const price = getUnitPrice(item.product, item.variant);
       subtotal += price * item.quantity;
       return {
         productId: item.productId,
@@ -76,7 +77,7 @@ export async function createOrderFromCart(userId: string | null, guestCartItems:
       }
     }
 
-    const shippingFee = input.shippingMethod === "Express" ? 1200 : subtotal >= 5000 ? 0 : 600;
+    const shippingFee = getShippingFee(subtotal, input.shippingMethod);
     const tax = 0;
     const total = Math.max(subtotal - discount + shippingFee + tax, 0);
 

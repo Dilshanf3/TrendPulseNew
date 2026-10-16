@@ -1,30 +1,49 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ChevronRight, Heart, Package, ShoppingBag } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { PageHeader } from "@/components/ui/section-header";
+import { SignOutButton } from "@/components/account/sign-out-button";
+
+export const metadata = { title: "My account" };
 
 const LINKS = [
-  { label: "Orders", href: "/account/orders", description: "Track and manage your orders" },
-  { label: "Addresses", href: "/account/addresses", description: "Manage shipping addresses" },
-  { label: "Profile", href: "/account/profile", description: "Update your personal information" },
-  { label: "Wishlist", href: "/wishlist", description: "View your saved items" },
+  { label: "Orders", href: "/account/orders", description: "Track and review your orders", icon: Package },
+  { label: "Wishlist", href: "/wishlist", description: "Pieces you've saved for later", icon: Heart },
+  { label: "Shopping bag", href: "/cart", description: "Review what's in your bag", icon: ShoppingBag },
 ];
 
 export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-1 font-serif text-xl font-semibold uppercase tracking-wide">My Account</h1>
-      <p className="mb-8 text-sm text-charcoal-soft">Welcome back, {session.user.name ?? session.user.email}</p>
+  const name = session.user.name?.split(" ")[0];
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="rounded-sm border border-line bg-paper p-5 shadow-sm hover:border-gold-dark hover:shadow-md">
-            <p className="text-sm font-semibold uppercase tracking-wide">{link.label}</p>
-            <p className="mt-1 text-xs text-charcoal-soft">{link.description}</p>
-          </Link>
-        ))}
+  return (
+    <div className="container-page py-10 sm:py-14">
+      <div className="mx-auto max-w-3xl">
+        <PageHeader title={name ? `Hi, ${name}` : "My account"} description={session.user.email ?? undefined} />
+
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
+          {LINKS.map(({ label, href, description, icon: Icon }) => (
+            <li key={href}>
+              <Link href={href} className="flex items-center gap-4 p-5 transition-colors hover:bg-surface-muted/60">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-muted">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-medium">{label}</span>
+                  <span className="block text-sm text-muted">{description}</span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-8">
+          <SignOutButton />
+        </div>
       </div>
     </div>
   );

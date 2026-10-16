@@ -1,12 +1,30 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CheckCircle2, Package } from "lucide-react";
+import type { OrderStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { formatPrice } from "@/lib/utils";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/section-header";
 
-export default async function OrdersPage() {
+export const metadata = { title: "My orders" };
+
+const STATUS_VARIANT: Partial<Record<OrderStatus, BadgeProps["variant"]>> = {
+  DELIVERED: "success",
+  CANCELLED: "danger",
+  REFUNDED: "danger",
+  PENDING: "warning",
+};
+
+const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
+
+export default async function OrdersPage(props: PageProps<"/account/orders">) {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account/orders");
 
+  const { success } = await props.searchParams;
   const orders = await prisma.order.findMany({
     where: { userId: session.user.id },
     include: { items: true },
@@ -14,30 +32,48 @@ export default async function OrdersPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-6 font-serif text-xl font-semibold uppercase tracking-wide">My Orders</h1>
+    <div className="container-page py-10 sm:py-14">
+      <div className="mx-auto max-w-3xl">
+        <Link href="/account" className="text-sm text-muted hover:text-foreground">
+          ← My account
+        </Link>
+        <div className="mt-4">
+          <PageHeader title="Orders" />
+        </div>
 
-      {orders.length === 0 ? (
-        <p className="text-sm text-charcoal-soft">You haven&apos;t placed any orders yet.</p>
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {orders.map((order) => (
-            <li key={order.id} className="rounded-sm border border-line bg-paper p-4 shadow-sm hover:shadow-md">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-charcoal">#{order.orderNumber}</span>
-                <span className="rounded-sm border border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-soft">
-                  {order.status}
-                </span>
-              </div>
-              <p className="text-xs text-charcoal-soft">
-                {order.items.length} item{order.items.length !== 1 ? "s" : ""} · {formatPrice(Number(order.total))} ·{" "}
-                {order.paymentMethod === "COD" ? "Cash on Delivery" : "Card"}
+        {typeof success === "string" && (
+          <div role="status" className="mb-8 flex gap-3 rounded-2xl bg-emerald-50 p-5 text-emerald-900">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-medium">Thank you — your order is confirmed</p>
+              <p className="mt-0.5 text-sm text-emerald-800">
+                Order #{success} has been placed. We&apos;ll be in touch to confirm delivery.
               </p>
-              <p className="mt-1 text-xs text-charcoal-soft/60">{new Date(order.createdAt).toLocaleDateString()}</p>
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          </div>
+        )}
+
+        {orders.length === 0 ? (
+          <EmptyState icon={Package} title="No orders yet" description="When you place an order, it will appear here." action={{ label: "Start shopping", href: "/new-in" }} />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {orders.map((order) => (
+              <li key={order.id} className="rounded-2xl border border-border bg-surface p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">#{order.orderNumber}</span>
+                  <Badge variant={STATUS_VARIANT[order.status] ?? "outline"}>{titleCase(order.status)}</Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted">
+                  {new Date(order.createdAt).toLocaleDateString("en-LK", { day: "numeric", month: "short", year: "numeric" })} ·{" "}
+                  {order.items.length} {order.items.length === 1 ? "item" : "items"} ·{" "}
+                  {order.paymentMethod === "COD" ? "Cash on delivery" : "Card"}
+                </p>
+                <p className="mt-3 text-base font-semibold tabular-nums">{formatPrice(Number(order.total))}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

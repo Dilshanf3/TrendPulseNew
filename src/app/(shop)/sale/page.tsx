@@ -1,18 +1,15 @@
-import { prisma } from "@/lib/db/prisma";
-import { toProductCard } from "@/lib/utils/map-product";
-import { CategoryListing } from "@/components/product/category-listing";
+import { ProductListing } from "@/components/catalog/product-listing";
 
 export const metadata = { title: "Sale" };
 
-export default async function SalePage() {
-  const products = await prisma.product.findMany({
-    where: { status: "PUBLISHED", salePrice: { not: null } },
-    include: { images: { orderBy: { sortOrder: "asc" } }, variants: true },
-    orderBy: { createdAt: "desc" },
-    take: 60,
-  });
-
+export default async function SalePage(props: PageProps<"/sale">) {
   return (
-    <CategoryListing title="Sale" description="Limited-time deals across the entire collection." products={products.map(toProductCard)} />
+    <ProductListing
+      title="Sale"
+      description="Limited-time prices across the collection."
+      pathname="/sale"
+      searchParams={await props.searchParams}
+      scope={{ onSale: true }}
+    />
   );
 }

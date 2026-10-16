@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { getUnitPrice } from "@/lib/pricing";
 
 export async function getOrCreateCart(userId: string) {
   let cart = await prisma.cart.findUnique({
@@ -82,10 +83,7 @@ export async function removeCartItem(userId: string, itemId: string) {
 export async function getCartTotals(userId: string) {
   const cart = await getOrCreateCart(userId);
 
-  const subtotal = cart.items.reduce((sum, item) => {
-    const price = item.variant?.salePrice ?? item.variant?.price ?? item.product.salePrice ?? item.product.basePrice;
-    return sum + Number(price) * item.quantity;
-  }, 0);
+  const subtotal = cart.items.reduce((sum, item) => sum + getUnitPrice(item.product, item.variant) * item.quantity, 0);
 
   return { subtotal, itemCount: cart.items.reduce((n, i) => n + i.quantity, 0) };
 }

@@ -1,85 +1,57 @@
 import { prisma } from "@/lib/db/prisma";
 import { Prisma } from "@prisma/client";
+import { toProductCard } from "@/lib/utils/map-product";
 import type { SortOption } from "@/types";
 
-type ListProductsParams = {
+/** The minimal relations a product card needs. */
+const cardInclude = {
+  images: { orderBy: { sortOrder: "asc" }, select: { url: true, isHover: true } },
+  variants: { select: { color: true, colorHex: true } },
+} satisfies Prisma.ProductInclude;
+
+export type ListProductsParams = {
   categorySlug?: string;
   search?: string;
   sizes?: string[];
   colors?: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  rating?: number;
   onSale?: boolean;
+  isNew?: boolean;
   sort?: SortOption;
   page?: number;
   pageSize?: number;
 };
 
-function sortToOrderBy(sort?: SortOption): Prisma.ProductOrderByWithRelationInput {
+function sortToOrderBy(sort?: SortOption): Prisma.ProductOrderByWithRelationInput[] {
   switch (sort) {
-    case "newest":
-      return { createdAt: "desc" };
     case "popular":
-      return { soldCount: "desc" };
+      return [{ soldCount: "desc" }, { createdAt: "desc" }];
     case "rating":
-      return { ratingAvg: "desc" };
+      return [{ ratingAvg: "desc" }, { ratingCount: "desc" }];
     case "price-asc":
-      return { basePrice: "asc" };
+      return [{ basePrice: "asc" }];
     case "price-desc":
-      return { basePrice: "desc" };
+      return [{ basePrice: "desc" }];
     default:
-      return { createdAt: "desc" };
+      return [{ createdAt: "desc" }];
   }
 }
 
 export async function listProducts(params: ListProductsParams) {
-  const {
-    categorySlug,
-    search,
-    sizes,
-    colors,
-    minPrice,
-    maxPrice,
-    rating,
-    onSale,
-    sort,
-    page = 1,
-    pageSize = 24,
-  } = params;
+  const { categorySlug, search, sizes, colors, onSale, isNew, sort, page = 1, pageSize = 24 } = params;
 
-  const where: Prisma.ProductWhereInput = {
-    status: "PUBLISHED",
-  };
+  const where: Prisma.ProductWhereInput = { status: "PUBLISHED" };
 
   if (categorySlug) {
-    where.category = {
-      OR: [{ slug: categorySlug }, { parent: { slug: categorySlug } }],
-    };
+    where.category = { OR: [{ slug: categorySlug }, { parent: { slug: categorySlug } }] };
   }
-
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },
       { description: { contains: search, mode: "insensitive" } },
     ];
   }
-
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    where.basePrice = {
-      ...(minPrice !== undefined ? { gte: minPrice } : {}),
-      ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
-    };
-  }
-
-  if (rating !== undefined) {
-    where.ratingAvg = { gte: rating };
-  }
-
-  if (onSale) {
-    where.salePrice = { not: null };
-  }
-
+  if (onSale) where.salePrice = { not: null };
+  if (isNew) where.isNew = true;
   if (sizes?.length || colors?.length) {
     where.variants = {
       some: {
@@ -92,22 +64,45 @@ export async function listProducts(params: ListProductsParams) {
   const [items, total] = await prisma.$transaction([
     prisma.product.findMany({
       where,
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        variants: true,
-        category: true,
-      },
-      orderBy:
-        sort === "discount"
-          ? [{ salePrice: "asc" }, { createdAt: "desc" }]
-          : sortToOrderBy(sort),
+      include: cardInclude,
+      orderBy: sortToOrderBy(sort),
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
     prisma.product.count({ where }),
   ]);
 
-  return { items, total, page, pageSize, pageCount: Math.ceil(total / pageSize) };
+  return { items: items.map(toProductCard), total, page, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
+}
+
+const COLLECTIONS = {
+  "new-arrivals": { where: { isNew: true }, orderBy: { createdAt: "desc" } },
+  "best-sellers": { where: { isBestSeller: true }, orderBy: { soldCount: "desc" } },
+} satisfies Record<string, { where: Prisma.ProductWhereInput; orderBy: Prisma.ProductOrderByWithRelationInput }>;
+
+export async function getCollection(name: keyof typeof COLLECTIONS, take = 8) {
+  const { where, orderBy } = COLLECTIONS[name];
+  const products = await prisma.product.findMany({
+    where: { status: "PUBLISHED", ...where },
+    include: cardInclude,
+    orderBy,
+    take,
+  });
+  return products.map(toProductCard);
+}
+
+/** A top-level category plus its active sub-categories that have products (the listing's chips). */
+export async function getCategoryWithChildren(slug: string) {
+  return prisma.category.findFirst({
+    where: { slug, parentId: null, isActive: true },
+    include: {
+      children: {
+        where: { isActive: true, products: { some: { status: "PUBLISHED" } } },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { slug: true, name: true },
+      },
+    },
+  });
 }
 
 export async function getProductBySlug(slug: string) {
@@ -116,7 +111,7 @@ export async function getProductBySlug(slug: string) {
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       variants: true,
-      category: true,
+      category: { include: { parent: true } },
       brand: true,
       reviews: {
         include: {
@@ -129,13 +124,14 @@ export async function getProductBySlug(slug: string) {
   });
 }
 
-export async function getRelatedProducts(categoryId: string, excludeId: string, take = 8) {
-  return prisma.product.findMany({
+export async function getRelatedProducts(categoryId: string, excludeId: string, take = 4) {
+  const products = await prisma.product.findMany({
     where: { categoryId, id: { not: excludeId }, status: "PUBLISHED" },
-    include: { images: { orderBy: { sortOrder: "asc" } }, variants: true, category: true },
+    include: cardInclude,
     take,
     orderBy: { soldCount: "desc" },
   });
+  return products.map(toProductCard);
 }
 
 export async function searchProducts(query: string, take = 10) {
@@ -148,7 +144,7 @@ export async function searchProducts(query: string, take = 10) {
         { description: { contains: query, mode: "insensitive" } },
       ],
     },
-    include: { images: { orderBy: { sortOrder: "asc" }, take: 1 }, variants: true, category: true },
+    select: { id: true, name: true, slug: true },
     take,
   });
 }

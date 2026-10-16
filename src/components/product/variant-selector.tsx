@@ -2,6 +2,14 @@
 
 import { cn } from "@/lib/utils";
 
+const CLOTHING_SIZE = /^(XXS|XS|S|M|L|XL|XXL|XXXL|\d+)$/i;
+
+/** "Size" for apparel, "Option" for anything else (e.g. Salt / Pepper). */
+export function optionLabel(variants: { size: string | null }[]) {
+  const values = variants.map((v) => v.size).filter((s): s is string => !!s);
+  return values.every((s) => CLOTHING_SIZE.test(s)) ? "Size" : "Option";
+}
+
 type Variant = {
   id: string;
   color: string | null;
@@ -29,47 +37,57 @@ export function VariantSelector({
   const sizes = Array.from(new Set(sizesForColor.filter((v) => v.size).map((v) => v.size!)));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {colors.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-soft">
-            Color{selectedColor ? `: ${selectedColor}` : ""}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((v) => (
-              <button
-                key={v.color}
-                onClick={() => onColorChange(v.color!)}
-                title={v.color!}
-                className={cn(
-                  "h-9 w-9 rounded-full border-2 transition-transform",
-                  selectedColor === v.color ? "border-gold-dark scale-105" : "border-line"
-                )}
-                style={{ backgroundColor: v.colorHex ?? "#ccc" }}
-              />
-            ))}
+        <fieldset>
+          <legend className="mb-3 text-sm">
+            <span className="font-medium">Colour</span>
+            {selectedColor && <span className="text-muted"> · {selectedColor}</span>}
+          </legend>
+          <div className="flex flex-wrap gap-2.5">
+            {colors.map((v) => {
+              const active = selectedColor === v.color;
+              return (
+                <button
+                  key={v.color}
+                  type="button"
+                  onClick={() => onColorChange(v.color!)}
+                  aria-label={v.color!}
+                  aria-pressed={active}
+                  className={cn(
+                    "h-9 w-9 rounded-full ring-offset-2 ring-offset-background transition-shadow",
+                    active ? "ring-2 ring-foreground" : "ring-1 ring-border hover:ring-muted"
+                  )}
+                  style={{ backgroundColor: v.colorHex ?? "#ccc" }}
+                />
+              );
+            })}
           </div>
-        </div>
+        </fieldset>
       )}
 
       {sizes.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-soft">
-            Size{selectedSize ? `: ${selectedSize}` : ""}
-          </p>
-          <div className="flex flex-wrap gap-2">
+        <fieldset>
+          <legend className="mb-3 text-sm">
+            <span className="font-medium">{optionLabel(variants)}</span>
+            {selectedSize && <span className="text-muted"> · {selectedSize}</span>}
+          </legend>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
             {sizes.map((size) => {
               const variant = sizesForColor.find((v) => v.size === size);
               const available = variant ? variant.stock - variant.reservedStock : 0;
+              const active = selectedSize === size;
               return (
                 <button
                   key={size}
+                  type="button"
                   disabled={available <= 0}
                   onClick={() => onSizeChange(size)}
+                  aria-pressed={active}
                   className={cn(
-                    "flex h-10 min-w-10 items-center justify-center rounded-sm border px-3 text-sm transition-colors",
-                    selectedSize === size ? "border-charcoal bg-charcoal text-white" : "border-line",
-                    available <= 0 && "cursor-not-allowed border-cream-dark text-charcoal-soft/50 line-through"
+                    "h-11 rounded-lg border text-sm transition-colors",
+                    active ? "border-foreground bg-foreground text-primary-foreground" : "border-border bg-surface hover:border-foreground",
+                    available <= 0 && "cursor-not-allowed text-muted/50 line-through hover:border-border"
                   )}
                 >
                   {size}
@@ -77,7 +95,7 @@ export function VariantSelector({
               );
             })}
           </div>
-        </div>
+        </fieldset>
       )}
     </div>
   );

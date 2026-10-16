@@ -1,18 +1,15 @@
-import { prisma } from "@/lib/db/prisma";
-import { toProductCard } from "@/lib/utils/map-product";
-import { CategoryListing } from "@/components/product/category-listing";
+import { ProductListing } from "@/components/catalog/product-listing";
 
 export const metadata = { title: "New In" };
 
-export default async function NewInPage() {
-  const products = await prisma.product.findMany({
-    where: { status: "PUBLISHED", isNew: true },
-    include: { images: { orderBy: { sortOrder: "asc" } }, variants: true },
-    orderBy: { createdAt: "desc" },
-    take: 60,
-  });
-
+export default async function NewInPage(props: PageProps<"/new-in">) {
   return (
-    <CategoryListing title="New In" description="The latest arrivals, fresh off the runway." products={products.map(toProductCard)} />
+    <ProductListing
+      title="New In"
+      description="The latest arrivals, fresh for the season."
+      pathname="/new-in"
+      searchParams={await props.searchParams}
+      scope={{ isNew: true }}
+    />
   );
 }

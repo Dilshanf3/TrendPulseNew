@@ -19,7 +19,7 @@ export const checkoutSchema = z.object({
   city: z.string().min(1),
   state: z.string().min(1),
   postalCode: z.string().min(1),
-  country: z.string().default("US"),
+  country: z.string().default("Sri Lanka"),
   shippingMethod: z.enum(["Standard", "Express"]).default("Standard"),
   paymentMethod: z.enum(["COD", "CARD"]).default("COD"),
   couponCode: z.string().optional(),

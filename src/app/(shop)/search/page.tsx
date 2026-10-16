@@ -1,31 +1,32 @@
-import { prisma } from "@/lib/db/prisma";
-import { toProductCard } from "@/lib/utils/map-product";
-import { CategoryListing } from "@/components/product/category-listing";
+import { Search } from "lucide-react";
+import type { Metadata } from "next";
+import { ProductListing } from "@/components/catalog/product-listing";
+import { EmptyState } from "@/components/ui/empty-state";
+import { parseListingQuery } from "@/lib/catalog";
 
-export const metadata = { title: "Search Results" };
+export async function generateMetadata(props: PageProps<"/search">): Promise<Metadata> {
+  const { q } = parseListingQuery(await props.searchParams);
+  return { title: q ? `Search: ${q}` : "Search" };
+}
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q = "" } = await searchParams;
+export default async function SearchPage(props: PageProps<"/search">) {
+  const searchParams = await props.searchParams;
+  const { q } = parseListingQuery(searchParams);
 
-  const products = q.trim()
-    ? await prisma.product.findMany({
-        where: {
-          status: "PUBLISHED",
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        include: { images: { orderBy: { sortOrder: "asc" } }, variants: true },
-        take: 60,
-      })
-    : [];
+  if (!q) {
+    return (
+      <div className="container-page py-10">
+        <EmptyState icon={Search} title="What are you looking for?" description="Use the search icon at the top of the page to find products." />
+      </div>
+    );
+  }
 
   return (
-    <CategoryListing
-      title={q ? `Results for "${q}"` : "Search"}
-      description={q ? undefined : "Enter a search term to find products."}
-      products={products.map(toProductCard)}
+    <ProductListing
+      title={`Results for “${q}”`}
+      pathname="/search"
+      searchParams={searchParams}
+      scope={{ search: q }}
     />
   );
 }

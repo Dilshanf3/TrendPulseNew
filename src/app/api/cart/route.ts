@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getOrCreateCart } from "@/server/services/cart-service";
 import { FALLBACK_IMAGE } from "@/lib/image-pool";
+import { getUnitPrice } from "@/lib/pricing";
 
 export async function GET() {
   const session = await auth();
@@ -12,7 +13,7 @@ export async function GET() {
   const cart = await getOrCreateCart(session.user.id);
 
   const items = cart.items.map((item) => {
-    const price = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.salePrice ?? item.product.basePrice);
+    const price = getUnitPrice(item.product, item.variant);
     return {
       id: item.id,
       productId: item.productId,

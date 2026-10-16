@@ -19,6 +19,11 @@ export function calcDiscountPercent(basePrice: number, salePrice: number) {
   return Math.round(((basePrice - salePrice) / basePrice) * 100);
 }
 
+/** Only allow same-site relative paths as post-login redirects (prevents open redirects). */
+export function safeCallbackUrl(url: string | null | undefined) {
+  return url && url.startsWith("/") && !url.startsWith("//") ? url : "/";
+}
+
 export function slugify(text: string) {
   return text
     .toLowerCase()

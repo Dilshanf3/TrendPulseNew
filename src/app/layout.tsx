@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { SITE } from "@/config/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,14 +18,15 @@ const geistMono = Geist_Mono({
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "TrendPulse — Fashion That Moves With You",
-    template: "%s | TrendPulse",
+    default: `${SITE.name} — Fashion That Moves With You`,
+    template: `%s | ${SITE.name}`,
   },
-  description: "Shop the latest trends in women's, men's, and kids' fashion at TrendPulse.",
+  description: SITE.description,
   icons: {
     icon: "/images/logo.jpg",
   },
@@ -36,10 +38,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-charcoal">
+      <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <AuthSessionProvider>
           {children}
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-center" toastOptions={{ className: "!rounded-xl !font-sans" }} />
         </AuthSessionProvider>
       </body>
     </html>
